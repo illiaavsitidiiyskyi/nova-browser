@@ -1,0 +1,22 @@
+/* Базовые сбросы стилей — напарник допишет свои */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: sans-serif;
+    background: #1e1e1e;
+    color: #eee;
+}
+
+#toolbar {
+    padding: 10px;
+    background: #2d2d2d;
+    border-bottom: 1px solid #444;
+}
+
+#content-area {
+    padding: 20px;
+}
