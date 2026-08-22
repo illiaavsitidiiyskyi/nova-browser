@@ -1,20 +1,69 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Browser</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div id="app">
+        <!-- Toolbar -->
+        <header class="toolbar">
+            <div class="toolbar-group">
+                <button id="btn-back" class="toolbar-btn" title="Back">
+                    <span>←</span>
+                </button>
+                <button id="btn-forward" class="toolbar-btn" title="Forward">
+                    <span>→</span>
+                </button>
+                <button id="btn-reload" class="toolbar-btn" title="Reload">
+                    <span>↻</span>
+                </button>
+                <button id="btn-home" class="toolbar-btn" title="Home">
+                    <span>⌂</span>
+                </button>
+            </div>
 
-    <!-- Заготовка toolbar — напарник наполнит реальными кнопками -->
-    <div id="toolbar">
-        <span>Nova Browser — Frontend UI (заготовка)</span>
-    </div>
+            <!-- Address Bar -->
+            <div class="address-bar-container">
+                <input 
+                    type="text" 
+                    id="address-bar" 
+                    class="address-bar" 
+                    placeholder="Enter URL..."
+                    value="https://example.com"
+                >
+            </div>
 
-    <!-- Здесь в будущем будет область с вкладками / веб-контентом -->
-    <div id="content-area">
-        <p>Frontend UI ещё не готов. Здесь будет toolbar, вкладки, address bar.</p>
+            <!-- Settings / Menu -->
+            <div class="toolbar-group">
+                <button id="btn-menu" class="toolbar-btn" title="Menu">
+                    <span>☰</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Tabs Bar -->
+        <div class="tabs-bar">
+            <div id="tabs-container" class="tabs-container">
+                <div class="tab active" data-tab-id="1">
+                    <span class="tab-title">New Tab</span>
+                    <button class="tab-close">×</button>
+                </div>
+            </div>
+            <button id="btn-new-tab" class="btn-new-tab">+</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <div id="webview" class="webview">
+                <div class="placeholder">
+                    <h2>Nova Browser</h2>
+                    <p>Enter a URL in the address bar to navigate.</p>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="js/main.js"></script>
