@@ -5,6 +5,24 @@
 #include <algorithm>
 #include <iostream>
 
+SimpleHandler::SimpleHandler() {
+    // Настраиваем имена JS-функций, через которые фронтенд будет
+    // обращаться к нам. По умолчанию CEF предлагает "cefQuery" /
+    // "cefQueryCancel" — используем стандартные имена, как в задании
+    // напарника (window.cefQuery(...)).
+    CefMessageRouterConfig config;
+    config.js_query_function = "cefQuery";
+    config.js_cancel_function = "cefQueryCancel";
+
+    message_router_ = CefMessageRouterBrowserSide::Create(config);
+
+    ipc_handler_ = new IPCHandler();
+    // AddHandler НЕ забирает владение указателем — поэтому ipc_handler_
+    // обязательно должен храниться как поле SimpleHandler, а не быть
+    // временным объектом, иначе роутер останется с висячим указателем.
+    message_router_->AddHandler(ipc_handler_.get(), false);
+}
+
 void SimpleHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     CEF_REQUIRE_UI_THREAD();
     // Новое окно создано — запоминаем его
@@ -43,4 +61,16 @@ void SimpleHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
     CEF_REQUIRE_UI_THREAD();
     // Пока просто выводим в консоль — позже свяжем с нашим UI
     std::cout << "[Nova Browser] Title changed: " << title.ToString() << std::endl;
+}
+
+bool SimpleHandler::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
+                                              CefRefPtr<CefFrame> frame,
+                                              CefProcessId source_process,
+                                              CefRefPtr<CefProcessMessage> message) {
+    CEF_REQUIRE_UI_THREAD();
+    // Отдаём сообщение роутеру — если это действительно cefQuery-запрос,
+    // он сам найдёт нужный handler (у нас он один — IPCHandler) и вызовет
+    // его OnQuery(...). Возвращаемое значение говорит CEF, было ли
+    // сообщение обработано здесь или нужно передать дальше.
+    return message_router_->OnProcessMessageReceived(browser, frame, source_process, message);
 }

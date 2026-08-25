@@ -20,6 +20,10 @@ add_executable(nova_browser
         src/browser/simple_handler.cpp
         src/core/browser_manager.hpp
         src/core/browser_manager.cpp
+        src/ipc/message_types.hpp
+        src/ipc/message_types.cpp
+        src/ipc/ipc_handler.hpp
+        src/ipc/ipc_handler.cpp
 )
 
 target_include_directories(nova_browser PRIVATE
