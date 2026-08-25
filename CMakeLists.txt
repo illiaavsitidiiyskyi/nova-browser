@@ -15,9 +15,11 @@ add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
 
 # --- Наш исполняемый файл ---
 add_executable(nova_browser
-    src/main.cpp
-    src/browser/simple_app.cpp
-    src/browser/simple_handler.cpp
+        src/main.cpp
+        src/browser/simple_app.cpp
+        src/browser/simple_handler.cpp
+        src/core/browser_manager.hpp
+        src/core/browser_manager.cpp
 )
 
 target_include_directories(nova_browser PRIVATE

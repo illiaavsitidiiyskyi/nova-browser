@@ -1,8 +1,0 @@
-//
-// Created by kryvna on 8/24/26.
-//
-
-#ifndef NOVA_BROWSER_BROWSER_MANAGER_H
-#define NOVA_BROWSER_BROWSER_MANAGER_H
-
-#endif //NOVA_BROWSER_BROWSER_MANAGER_H
