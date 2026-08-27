@@ -1,4 +1,3 @@
-// Simple frontend logic
 class NovaBrowser {
     constructor() {
         this.tabs = [];
@@ -7,6 +6,8 @@ class NovaBrowser {
         
         this.initializeElements();
         this.attachEventListeners();
+        
+        console.log('Nova Browser frontend initialized');
     }
 
     initializeElements() {
@@ -21,89 +22,190 @@ class NovaBrowser {
     }
 
     attachEventListeners() {
-        this.btnBack.addEventListener('click', () => this.goBack());
-        this.btnForward.addEventListener('click', () => this.goForward());
-        this.btnReload.addEventListener('click', () => this.reload());
-        this.btnHome.addEventListener('click', () => this.goHome());
-        this.btnNewTab.addEventListener('click', () => this.newTab());
+        this.btnBack.addEventListener('click', () => this.handleBackClick());
+        this.btnForward.addEventListener('click', () => this.handleForwardClick());
+        this.btnReload.addEventListener('click', () => this.handleReloadClick());
+        this.btnHome.addEventListener('click', () => this.handleHomeClick());
+        this.btnNewTab.addEventListener('click', () => this.handleNewTabClick());
 
         this.addressBar.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                this.navigate(this.addressBar.value);
+                this.handleNavigate(this.addressBar.value);
             }
+        });
+
+        this.addressBar.addEventListener('focus', () => {
+            this.addressBar.select();
         });
     }
 
-    navigate(url) {
-        console.log('Navigating to:', url);
-        // TODO: Call C++ backend to navigate
-        // For now, just update address bar
+    async handleBackClick() {
+        try {
+            console.log('Going back...');
+            await window.ipcClient.goBack();
+            this.updateUI();
+        } catch (error) {
+            console.error('Back failed:', error);
+            this.showError('Failed to go back');
+        }
     }
 
-    goBack() {
-        console.log('Go back');
-        // TODO: Call C++ backend
+    async handleForwardClick() {
+        try {
+            console.log('Going forward...');
+            await window.ipcClient.goForward();
+            this.updateUI();
+        } catch (error) {
+            console.error('Forward failed:', error);
+            this.showError('Failed to go forward');
+        }
     }
 
-    goForward() {
-        console.log('Go forward');
-        // TODO: Call C++ backend
+    async handleReloadClick() {
+        try {
+            console.log('Reloading...');
+            await window.ipcClient.reload();
+            this.updateUI();
+        } catch (error) {
+            console.error('Reload failed:', error);
+            this.showError('Failed to reload');
+        }
     }
 
-    reload() {
-        console.log('Reload');
-        // TODO: Call C++ backend
+    async handleHomeClick() {
+        try {
+            console.log('Going home...');
+            await this.handleNavigate('https://example.com');
+        } catch (error) {
+            console.error('Home failed:', error);
+            this.showError('Failed to go home');
+        }
     }
 
-    goHome() {
-        console.log('Go home');
-        this.navigate('https://example.com');
+    async handleNavigate(url) {
+        try {
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            console.log('Navigating to:', url);
+            await window.ipcClient.navigate(url);
+            this.addressBar.value = url;
+            this.updateUI();
+        } catch (error) {
+            console.error('Navigate failed:', error);
+            this.showError('Failed to navigate');
+        }
     }
 
-    newTab() {
-        console.log('New tab');
-        const tabId = this.nextTabId++;
-        this.createTab(tabId, 'New Tab');
+    async handleNewTabClick() {
+        try {
+            console.log('Opening new tab...');
+            const result = await window.ipcClient.openTab('https://example.com');
+            const tabId = result?.tabId || this.nextTabId++;
+            this.createTab(tabId, 'New Tab', 'https://example.com');
+            this.switchTab(tabId);
+        } catch (error) {
+            console.error('New tab failed:', error);
+            this.showError('Failed to open new tab');
+        }
     }
 
-    createTab(tabId, title) {
+    createTab(tabId, title, url) {
         const tabElement = document.createElement('div');
-        tabElement.className = 'tab active';
+        tabElement.className = 'tab';
         tabElement.dataset.tabId = tabId;
+        tabElement.dataset.url = url;
         tabElement.innerHTML = `
             <span class="tab-title">${title}</span>
             <button class="tab-close">×</button>
         `;
 
-        tabElement.addEventListener('click', () => this.switchTab(tabId));
-        tabElement.querySelector('.tab-close').addEventListener('click', (e) => {
+        tabElement.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('tab-close')) {
+                this.switchTab(tabId);
+            }
+        });
+
+        tabElement.querySelector('.tab-close').addEventListener('click', async (e) => {
             e.stopPropagation();
-            this.closeTab(tabId);
+            await this.closeTab(tabId);
         });
 
         this.tabsContainer.appendChild(tabElement);
-        this.activeTabId = tabId;
     }
 
-    switchTab(tabId) {
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.querySelector(`[data-tab-id="${tabId}"]`).classList.add('active');
-        this.activeTabId = tabId;
-        console.log('Switched to tab:', tabId);
-    }
-
-    closeTab(tabId) {
-        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-        if (tabElement) {
-            tabElement.remove();
+    async switchTab(tabId) {
+        try {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab-id="${tabId}"]`)?.classList.add('active');
+            
+            this.activeTabId = tabId;
+            
+            const tabUrl = document.querySelector(`[data-tab-id="${tabId}"]`)?.dataset.url || '';
+            this.addressBar.value = tabUrl;
+            
+            console.log('Switched to tab:', tabId);
+            this.updateUI();
+        } catch (error) {
+            console.error('Switch tab failed:', error);
         }
-        console.log('Closed tab:', tabId);
+    }
+
+    async closeTab(tabId) {
+        try {
+            console.log('Closing tab:', tabId);
+            await window.ipcClient.closeTab(tabId);
+            
+            const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+            tabElement?.remove();
+            
+            if (this.activeTabId === tabId) {
+                const firstTab = document.querySelector('.tab');
+                if (firstTab) {
+                    const firstTabId = parseInt(firstTab.dataset.tabId);
+                    this.switchTab(firstTabId);
+                } else {
+                    this.handleNewTabClick();
+                }
+            }
+        } catch (error) {
+            console.error('Close tab failed:', error);
+            this.showError('Failed to close tab');
+        }
+    }
+
+    async updateUI() {
+        try {
+            const url = await window.ipcClient.getCurrentURL();
+            this.addressBar.value = url || '';
+        } catch (error) {
+            console.error('Failed to update UI:', error);
+        }
+    }
+
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #f44336;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            z-index: 9999;
+            font-size: 13px;
+        `;
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        
+        setTimeout(() => errorDiv.remove(), 3000);
     }
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    new NovaBrowser();
+    window.browser = new NovaBrowser();
 });
