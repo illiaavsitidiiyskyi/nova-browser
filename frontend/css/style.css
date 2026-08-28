@@ -191,34 +191,91 @@ body {
     color: white;
 }
 
-.content {
+.main-container {
     flex: 1;
     display: flex;
     overflow: hidden;
     background: var(--bg-primary);
 }
 
-.webview {
+.content {
     flex: 1;
     overflow: auto;
     background: var(--bg-primary);
 }
 
-.placeholder {
+.browser-container {
+    flex: 1;
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 180px;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--text-secondary);
+    padding: 10px;
+    gap: 8px;
 }
 
-.placeholder h2 {
-    margin-bottom: 10px;
+.sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
     color: var(--text-primary);
-    font-size: 24px;
+    text-transform: uppercase;
 }
 
-.placeholder p {
+.btn-add-fav {
+    padding: 6px 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.btn-add-fav:hover {
+    background: var(--accent-hover);
+}
+
+.favorites-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fav-item {
+    padding: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    font-size: 11px;
     color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fav-item:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.fav-remove {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
 }

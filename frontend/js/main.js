@@ -102,7 +102,7 @@ class NovaBrowser {
         try {
             console.log('Opening new tab...');
             const result = await window.ipcClient.openTab('https://example.com');
-            const tabId = result?.tabId || this.nextTabId++;
+            const tabId = result && result.tabId ? result.tabId : this.nextTabId++;
             this.createTab(tabId, 'New Tab', 'https://example.com');
             this.switchTab(tabId);
         } catch (error) {
@@ -116,10 +116,7 @@ class NovaBrowser {
         tabElement.className = 'tab';
         tabElement.dataset.tabId = tabId;
         tabElement.dataset.url = url;
-        tabElement.innerHTML = `
-            <span class="tab-title">${title}</span>
-            <button class="tab-close">×</button>
-        `;
+        tabElement.innerHTML = '<span class="tab-title">' + title + '</span><button class="tab-close">×</button>';
 
         tabElement.addEventListener('click', (e) => {
             if (!e.target.classList.contains('tab-close')) {
@@ -137,14 +134,18 @@ class NovaBrowser {
 
     async switchTab(tabId) {
         try {
-            document.querySelectorAll('.tab').forEach(tab => {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.querySelector(`[data-tab-id="${tabId}"]`)?.classList.add('active');
+            const activeTab = document.querySelector('[data-tab-id="' + tabId + '"]');
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
             
             this.activeTabId = tabId;
             
-            const tabUrl = document.querySelector(`[data-tab-id="${tabId}"]`)?.dataset.url || '';
+            const tabUrl = activeTab ? activeTab.dataset.url : '';
             this.addressBar.value = tabUrl;
             
             console.log('Switched to tab:', tabId);
@@ -159,8 +160,10 @@ class NovaBrowser {
             console.log('Closing tab:', tabId);
             await window.ipcClient.closeTab(tabId);
             
-            const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-            tabElement?.remove();
+            const tabElement = document.querySelector('[data-tab-id="' + tabId + '"]');
+            if (tabElement) {
+                tabElement.remove();
+            }
             
             if (this.activeTabId === tabId) {
                 const firstTab = document.querySelector('.tab');
@@ -188,24 +191,57 @@ class NovaBrowser {
 
     showError(message) {
         const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #f44336;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 4px;
-            z-index: 9999;
-            font-size: 13px;
-        `;
+        errorDiv.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #f44336; color: white; padding: 10px 15px; border-radius: 4px; z-index: 9999; font-size: 13px;';
         errorDiv.textContent = message;
         document.body.appendChild(errorDiv);
         
-        setTimeout(() => errorDiv.remove(), 3000);
+        setTimeout(function() {
+            errorDiv.remove();
+        }, 3000);
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     window.browser = new NovaBrowser();
+    
+    const btn = document.getElementById('btn-add-favorite');
+    const list = document.getElementById('favorites-list');
+    let favs = [];
+    
+    try {
+        const stored = localStorage.getItem('nova_favs');
+        if (stored) favs = JSON.parse(stored);
+    } catch (e) {}
+    
+    const render = function() {
+        list.innerHTML = '';
+        favs.forEach(function(f, i) {
+            const item = document.createElement('div');
+            item.className = 'fav-item';
+            item.innerHTML = f.name + ' <button class="fav-remove">×</button>';
+            
+            item.onclick = function(e) {
+                if (e.target.classList.contains('fav-remove')) {
+                    favs.splice(i, 1);
+                    localStorage.setItem('nova_favs', JSON.stringify(favs));
+                    render();
+                } else {
+                    window.browser.handleNavigate(f.url);
+                }
+            };
+            list.appendChild(item);
+        });
+    };
+    
+    if (btn) {
+        btn.onclick = function() {
+            const url = window.browser.addressBar.value;
+            const name = url.split('/')[2] || url;
+            favs.push({url: url, name: name});
+            localStorage.setItem('nova_favs', JSON.stringify(favs));
+            render();
+        };
+    }
+    
+    render();
 });
