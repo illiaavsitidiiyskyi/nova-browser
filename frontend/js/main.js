@@ -204,8 +204,26 @@ class NovaBrowser {
 document.addEventListener('DOMContentLoaded', function() {
     window.browser = new NovaBrowser();
     
-    const btn = document.getElementById('btn-add-favorite');
-    const list = document.getElementById('favorites-list');
+    const btn = document.getElementById('btn-theme-toggle');
+    const icon = document.getElementById('theme-icon');
+    
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        icon.textContent = '☀️';
+    }
+    
+    btn.onclick = function() {
+        console.log('Theme button clicked');
+        const isDark = document.body.classList.toggle('dark-theme');
+        const newTheme = isDark ? 'dark' : 'light';
+        localStorage.setItem('theme', newTheme);
+        icon.textContent = isDark ? '☀️' : '🌙';
+        console.log('Theme changed to:', newTheme);
+    };
+    
+    const favBtn = document.getElementById('btn-add-favorite');
+    const favList = document.getElementById('favorites-list');
     let favs = [];
     
     try {
@@ -214,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (e) {}
     
     const render = function() {
-        list.innerHTML = '';
+        favList.innerHTML = '';
         favs.forEach(function(f, i) {
             const item = document.createElement('div');
             item.className = 'fav-item';
@@ -229,12 +247,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.browser.handleNavigate(f.url);
                 }
             };
-            list.appendChild(item);
+            favList.appendChild(item);
         });
     };
     
-    if (btn) {
-        btn.onclick = function() {
+    if (favBtn) {
+        favBtn.onclick = function() {
             const url = window.browser.addressBar.value;
             const name = url.split('/')[2] || url;
             favs.push({url: url, name: name});
