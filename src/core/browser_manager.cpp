@@ -83,3 +83,4 @@ void BrowserManager::Navigate(const std::string& url) {
 std::string BrowserManager::GetCurrentUrl() const {
     if (current_tab_index_ < 0 || current_tab_index_ >= static_cast<int>(tabs_.size())) return "about:blank";
     return tabs_[current_tab_index_].url;
+}
