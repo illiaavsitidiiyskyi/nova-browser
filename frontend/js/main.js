@@ -91,6 +91,7 @@ class NovaBrowser {
             console.log('Navigating to:', url);
             await window.ipcClient.navigate(url);
             this.addressBar.value = url;
+            window.browser.addToHistory(url);
             this.updateUI();
         } catch (error) {
             console.error('Navigate failed:', error);
@@ -199,6 +200,12 @@ class NovaBrowser {
             errorDiv.remove();
         }, 3000);
     }
+
+    addToHistory(url) {
+        if (window.browser.historyManager) {
+            window.browser.historyManager.add(url);
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -214,13 +221,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     btn.onclick = function() {
-        console.log('Theme button clicked');
         const isDark = document.body.classList.toggle('dark-theme');
         const newTheme = isDark ? 'dark' : 'light';
         localStorage.setItem('theme', newTheme);
         icon.textContent = isDark ? '☀️' : '🌙';
-        console.log('Theme changed to:', newTheme);
     };
+    
+    window.browser.historyManager = {
+        list: [],
+        
+        init: function() {
+            try {
+                const stored = localStorage.getItem('nova_history');
+                if (stored) this.list = JSON.parse(stored);
+            } catch (e) {}
+            this.render();
+        },
+        
+        add: function(url) {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            
+            this.list.unshift({ url: url, time: time, date: date });
+            
+            if (this.list.length > 100) {
+                this.list = this.list.slice(0, 100);
+            }
+            
+            localStorage.setItem('nova_history', JSON.stringify(this.list));
+            this.render();
+        },
+        
+        render: function() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            this.list.forEach(function(item, idx) {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = '<div class="history-item-url">' + item.url.split('//')[1] + '</div><div class="history-item-time">' + item.time + ' ' + item.date + '</div>';
+                
+                div.onclick = function() {
+                    window.browser.handleNavigate(item.url);
+                };
+                
+                historyList.appendChild(div);
+            });
+        }
+    };
+    
+    const clearBtn = document.getElementById('btn-clear-history');
+    clearBtn.onclick = function() {
+        if (confirm('Clear all history?')) {
+            window.browser.historyManager.list = [];
+            localStorage.setItem('nova_history', JSON.stringify([]));
+            window.browser.historyManager.render();
+        }
+    };
+    
+    window.browser.historyManager.init();
     
     const favBtn = document.getElementById('btn-add-favorite');
     const favList = document.getElementById('favorites-list');
