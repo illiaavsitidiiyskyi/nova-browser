@@ -75,7 +75,8 @@ class NovaBrowser {
     async handleHomeClick() {
         try {
             console.log('Going home...');
-            await this.handleNavigate('https://example.com');
+            const homePage = window.browser.settingsManager.settings.homePage;
+            await this.handleNavigate(homePage);
         } catch (error) {
             console.error('Home failed:', error);
             this.showError('Failed to go home');
@@ -281,6 +282,97 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     window.browser.historyManager.init();
+    
+    window.browser.settingsManager = {
+        settings: {
+            zoom: 100,
+            homePage: 'https://example.com',
+            doNotTrack: false,
+            blockCookies: false
+        },
+        
+        init: function() {
+            try {
+                const stored = localStorage.getItem('nova_settings');
+                if (stored) {
+                    this.settings = JSON.parse(stored);
+                }
+            } catch (e) {}
+            this.loadUIFromSettings();
+        },
+        
+        loadUIFromSettings: function() {
+            document.getElementById('zoom-slider').value = this.settings.zoom;
+            document.getElementById('zoom-value').textContent = this.settings.zoom + '%';
+            document.getElementById('home-page-input').value = this.settings.homePage;
+            document.getElementById('privacy-do-not-track').checked = this.settings.doNotTrack;
+            document.getElementById('privacy-block-cookies').checked = this.settings.blockCookies;
+        },
+        
+        saveSettings: function() {
+            this.settings.zoom = parseInt(document.getElementById('zoom-slider').value);
+            this.settings.homePage = document.getElementById('home-page-input').value;
+            this.settings.doNotTrack = document.getElementById('privacy-do-not-track').checked;
+            this.settings.blockCookies = document.getElementById('privacy-block-cookies').checked;
+            
+            localStorage.setItem('nova_settings', JSON.stringify(this.settings));
+            console.log('Settings saved:', this.settings);
+        },
+        
+        resetToDefaults: function() {
+            this.settings = {
+                zoom: 100,
+                homePage: 'https://example.com',
+                doNotTrack: false,
+                blockCookies: false
+            };
+            localStorage.setItem('nova_settings', JSON.stringify(this.settings));
+            this.loadUIFromSettings();
+            console.log('Settings reset to defaults');
+        }
+    };
+    
+    window.browser.settingsManager.init();
+    
+    const zoomSlider = document.getElementById('zoom-slider');
+    const zoomValue = document.getElementById('zoom-value');
+    zoomSlider.addEventListener('input', function() {
+        zoomValue.textContent = this.value + '%';
+    });
+    
+    const settingsModal = document.getElementById('settings-modal');
+    const btnSettings = document.getElementById('btn-settings');
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+    const btnSaveSettings = document.getElementById('btn-save-settings');
+    const btnResetSettings = document.getElementById('btn-reset-settings');
+    
+    btnSettings.onclick = function() {
+        window.browser.settingsManager.loadUIFromSettings();
+        settingsModal.style.display = 'flex';
+    };
+    
+    btnCloseSettings.onclick = function() {
+        settingsModal.style.display = 'none';
+    };
+    
+    btnSaveSettings.onclick = function() {
+        window.browser.settingsManager.saveSettings();
+        settingsModal.style.display = 'none';
+        window.browser.showError('Settings saved!');
+    };
+    
+    btnResetSettings.onclick = function() {
+        if (confirm('Reset all settings to default?')) {
+            window.browser.settingsManager.resetToDefaults();
+            window.browser.showError('Settings reset to default');
+        }
+    };
+    
+    settingsModal.onclick = function(e) {
+        if (e.target === settingsModal) {
+            settingsModal.style.display = 'none';
+        }
+    };
     
     const favBtn = document.getElementById('btn-add-favorite');
     const favList = document.getElementById('favorites-list');
