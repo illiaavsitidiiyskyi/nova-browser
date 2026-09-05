@@ -232,6 +232,26 @@ body {
     letter-spacing: 0.5px;
 }
 
+.sidebar-search {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-dark);
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.sidebar-search:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.sidebar-search::placeholder {
+    color: var(--text-light);
+}
+
 .btn-clear-history {
     padding: 8px 12px;
     background: transparent;

@@ -230,12 +230,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     window.browser.historyManager = {
         list: [],
+        filteredList: [],
         
         init: function() {
             try {
                 const stored = localStorage.getItem('nova_history');
                 if (stored) this.list = JSON.parse(stored);
             } catch (e) {}
+            this.filteredList = this.list;
             this.render();
         },
         
@@ -251,6 +253,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             localStorage.setItem('nova_history', JSON.stringify(this.list));
+            this.filteredList = this.list;
+            this.render();
+        },
+        
+        search: function(query) {
+            if (!query) {
+                this.filteredList = this.list;
+            } else {
+                const q = query.toLowerCase();
+                this.filteredList = this.list.filter(function(item) {
+                    return item.url.toLowerCase().includes(q);
+                });
+            }
             this.render();
         },
         
@@ -258,10 +273,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const historyList = document.getElementById('history-list');
             historyList.innerHTML = '';
             
-            this.list.forEach(function(item, idx) {
+            if (this.filteredList.length === 0) {
+                historyList.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-light); font-size: 12px;">No history found</div>';
+                return;
+            }
+            
+            this.filteredList.forEach(function(item, idx) {
                 const div = document.createElement('div');
                 div.className = 'history-item';
-                div.innerHTML = '<div class="history-item-url">' + item.url.split('//')[1] + '</div><div class="history-item-time">' + item.time + ' ' + item.date + '</div>';
+                const domain = item.url.split('//')[1] || item.url;
+                div.innerHTML = '<div class="history-item-url">' + domain + '</div><div class="history-item-time">' + item.time + ' ' + item.date + '</div>';
                 
                 div.onclick = function() {
                     window.browser.handleNavigate(item.url);
@@ -276,10 +297,16 @@ document.addEventListener('DOMContentLoaded', function() {
     clearBtn.onclick = function() {
         if (confirm('Clear all history?')) {
             window.browser.historyManager.list = [];
+            window.browser.historyManager.filteredList = [];
             localStorage.setItem('nova_history', JSON.stringify([]));
             window.browser.historyManager.render();
         }
     };
+    
+    const searchHistoryInput = document.getElementById('search-history');
+    searchHistoryInput.addEventListener('input', function() {
+        window.browser.historyManager.search(this.value);
+    });
     
     window.browser.historyManager.init();
     
@@ -377,24 +404,39 @@ document.addEventListener('DOMContentLoaded', function() {
     const favBtn = document.getElementById('btn-add-favorite');
     const favList = document.getElementById('favorites-list');
     let favs = [];
+    let filteredFavs = [];
     
     try {
         const stored = localStorage.getItem('nova_favs');
         if (stored) favs = JSON.parse(stored);
     } catch (e) {}
     
-    const render = function() {
+    const renderFavorites = function() {
         favList.innerHTML = '';
-        favs.forEach(function(f, i) {
+        
+        if (filteredFavs.length === 0) {
+            if (favs.length === 0) {
+                favList.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-light); font-size: 12px;">No favorites</div>';
+            } else {
+                favList.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-light); font-size: 12px;">No matches</div>';
+            }
+            return;
+        }
+        
+        filteredFavs.forEach(function(f, i) {
             const item = document.createElement('div');
             item.className = 'fav-item';
             item.innerHTML = f.name + ' <button class="fav-remove">×</button>';
             
             item.onclick = function(e) {
                 if (e.target.classList.contains('fav-remove')) {
-                    favs.splice(i, 1);
+                    const idx = favs.indexOf(f);
+                    if (idx > -1) {
+                        favs.splice(idx, 1);
+                    }
                     localStorage.setItem('nova_favs', JSON.stringify(favs));
-                    render();
+                    filteredFavs = favs.slice();
+                    renderFavorites();
                 } else {
                     window.browser.handleNavigate(f.url);
                 }
@@ -403,15 +445,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
     
+    const searchFavoritesInput = document.getElementById('search-favorites');
+    searchFavoritesInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        if (!query) {
+            filteredFavs = favs.slice();
+        } else {
+            filteredFavs = favs.filter(function(f) {
+                return f.url.toLowerCase().includes(query) || f.name.toLowerCase().includes(query);
+            });
+        }
+        renderFavorites();
+    });
+    
     if (favBtn) {
         favBtn.onclick = function() {
             const url = window.browser.addressBar.value;
             const name = url.split('/')[2] || url;
             favs.push({url: url, name: name});
             localStorage.setItem('nova_favs', JSON.stringify(favs));
-            render();
+            filteredFavs = favs.slice();
+            renderFavorites();
         };
     }
     
-    render();
+    filteredFavs = favs.slice();
+    renderFavorites();
 });
